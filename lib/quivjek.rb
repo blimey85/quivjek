@@ -73,6 +73,9 @@ class Quivjek
     fm          = parsed.front_matter
     content     = parsed.content
 
+    # Convert GitHub style to Liquid Tags
+    content = convert_gtol(content)
+
     # Set some default frontmatter and combine with content
     fm = set_default_frontmatter(fm, metajson)
     output = fm.to_yaml + "---\n" + content
@@ -97,6 +100,26 @@ class Quivjek
     contentjson = JSON.parse(File.read(contentpath))
 
     return contentjson
+  end
+
+  def convert_gtol(content)
+    output = ''
+    closing_tag = '{% endhighlight %}'
+
+    content.each_line do |line|
+      lang = /^```([a-z]+)/.match(line)
+
+      if lang
+        opening_tag = "{% highlight #{lang[1]} linedivs %}"
+        line.gsub!(/^```([a-z]+)/, opening_tag)
+      end
+
+      line.gsub!(/^```/, closing_tag)
+
+      output << line
+    end
+
+    return output
   end
 
   def copy_note_images(imagepath)
