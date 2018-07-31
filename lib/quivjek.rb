@@ -105,21 +105,30 @@ class Quivjek
   def convert_gtol(content)
     output = ''
     closing_tag = '{% endhighlight %}'
+    iclosing_tag = '{% endihighlight %}'
 
     content.each_line do |line|
-      lang = /^```([a-z]+)/.match(line)
+      matches = /^```(?<lang>.+)/.match(line)
 
-      if lang
-        opening_tag = "{% highlight #{lang[1]} linedivs %}"
-        line.gsub!(/^```([a-z]+)/, opening_tag)
+      if matches
+        line = "{% highlight #{matches[:lang]} linedivs %}\n"
       end
 
       line.gsub!(/^```/, closing_tag)
 
+      # Match inline highlighting
+      imatches = /`(?<ilang>bash|scss|ruby|css|js|javascript|erb|coffee|`conf|haml|html|json|liquid|markdown|perl|php|console|slim|yaml)(\s+)/.match(line)
+
+      if imatches
+        itag = "{% ihighlight #{imatches[:ilang]} %}"
+        line.gsub!(/(?<ilang>`bash|`scss|`ruby|`css|`js|`javascript|`erb|`coffee|`conf|`haml|`html|`json|`liquid|`markdown|`perl|`php|`console|`slim|`yaml)(\s+)/, itag)
+        line.gsub!(/`/, iclosing_tag)
+      end
+
       output << line
     end
 
-    return output
+    output
   end
 
   def copy_note_images(imagepath)
