@@ -9,7 +9,7 @@ require "yaml"
 
 Jekyll::Hooks.register :site, :after_init do |site|
 
-  if (ENV['APP_ENV'] != 'production')
+  if ENV['APP_ENV'] != 'production'
     q = Quivjek.new(site)
     q.load_posts_from_quiver
   end
@@ -19,7 +19,7 @@ end
 class Quivjek
 
   def initialize( site )
-    self.showhelp('The qivjek plugin requires notebook_dir be set in your _config.yml file') unless site.config.key?('notebook_dir')
+    self.showhelp('The quivjek plugin requires notebook_dir be set in your _config.yml file') unless site.config.key?('notebook_dir')
 
     @site         = site
     @jekyll_dir   = site.source
@@ -29,7 +29,7 @@ class Quivjek
 
   end
 
-  def load_posts_from_quiver()
+  def load_posts_from_quiver
 
     Dir.mkdir(@post_dir) unless File.exists?(@post_dir)
     Dir.mkdir(@img_dir) unless File.exists?(@img_dir)
@@ -74,7 +74,7 @@ class Quivjek
     content     = parsed.content
 
     # Convert GitHub style to Liquid Tags
-    content = convert_gtol(content)
+    content = convert_github_to_liquid(content)
 
     # Set some default frontmatter and combine with content
     fm = set_default_frontmatter(fm, metajson)
@@ -102,33 +102,17 @@ class Quivjek
     return contentjson
   end
 
-  def convert_gtol(content)
-    output = ''
-    closing_tag = '{% endhighlight %}'
-    iclosing_tag = '{% endihighlight %}'
+  def convert_github_to_liquid(content)
+    langs = %w[bash css coffee conf console erb haml html javascript js json liquid markdown md ruby sass slim yaml]
+    langs.each do |lang|
+      pattern = '```(' + lang + '\|*.*)([^`]*)```'
+      content.gsub!(/#{pattern}/, '{% highlight \1 linedivs %}\2{% endhighlight %}')
 
-    content.each_line do |line|
-      matches = /^```(?<lang>.+)/.match(line)
-
-      if matches
-        line = "{% highlight #{matches[:lang]} linedivs %}\n"
-      end
-
-      line.gsub!(/^```/, closing_tag)
-
-      # Match inline highlighting
-      imatches = /`(?<ilang>bash|scss|ruby|css|js|javascript|erb|coffee|`conf|haml|html|json|liquid|markdown|perl|php|console|slim|yaml)(\s+)/.match(line)
-
-      if imatches
-        itag = "{% ihighlight #{imatches[:ilang]} %}"
-        line.gsub!(/(?<ilang>`bash|`scss|`ruby|`css|`js|`javascript|`erb|`coffee|`conf|`haml|`html|`json|`liquid|`markdown|`perl|`php|`console|`slim|`yaml)(\s+)/, itag)
-        line.gsub!(/`/, iclosing_tag)
-      end
-
-      output << line
+      ipattern = '`' + lang + '([^`]*)`'
+      content.gsub!(/#{ipattern}/, '{% ihighlight ' + lang + ' %}\1{% endihighlight %}')
     end
 
-    output
+    content
   end
 
   def copy_note_images(imagepath)
@@ -149,13 +133,13 @@ class Quivjek
     month = "%02d" % date.month
     year = date.year
 
-    return "#{year}-#{month}-#{day}-#{title}.md"
+    "#{year}-#{month}-#{day}-#{title}.md"
   end
 
   def set_default_frontmatter(fm, metajson)
 
     # If certain frontmatter is missing default to quiver metadata
-    fm['title'] = metajson['title']      unless fm['title']
+    fm['title'] = metajson['title'] unless fm['title']
 
     if !fm.key?("date")
       date = DateTime.strptime(metajson["created_at"].to_s, "%s")
@@ -164,7 +148,7 @@ class Quivjek
 
     fm['tags']  = metajson["tags"]
 
-    return fm
+    fm
 
   end
 
