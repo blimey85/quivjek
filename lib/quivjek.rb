@@ -103,11 +103,14 @@ class Quivjek
   end
 
   def convert_github_to_liquid(content)
-    langs = %w[bash css coffee conf console erb haml html javascript js json liquid markdown md ruby sass slim yaml]
-    langs.each do |lang|
-      pattern = '```(' + lang + '\|*.*)([^`]*)```'
-      content.gsub!(/#{pattern}/, '{% highlight \1 linedivs %}\2{% endhighlight %}')
+    langs = %w[bash css coffee conf console erb haml html javascript js json liquid markdown md ruby sass slim yaml liquid]
 
+    langs.each do |lang|
+      pattern = '`{3}(' + lang + '\|*.*)([^`]*)`{3}'
+      content.gsub!(/#{pattern}/, '{% highlight \1 linedivs %}\2{% endhighlight %}')
+    end
+
+    langs.each do |lang|
       ipattern = '`' + lang + '([^`]*)`'
       content.gsub!(/#{ipattern}/, '{% ihighlight ' + lang + ' %}\1{% endihighlight %}')
     end
